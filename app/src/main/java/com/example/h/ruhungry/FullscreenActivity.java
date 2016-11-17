@@ -1,18 +1,34 @@
 package com.example.h.ruhungry;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.location.Location;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
+import android.support.v4.view.GestureDetectorCompat;
+import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Toast;
+
+import com.azoft.carousellayoutmanager.CarouselLayoutManager;
+import com.azoft.carousellayoutmanager.CarouselZoomPostLayoutListener;
+import com.azoft.carousellayoutmanager.CenterScrollListener;
+import com.azoft.carousellayoutmanager.DefaultChildSelectionListener;
+
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Call;
 
@@ -20,7 +36,8 @@ import retrofit2.Call;
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-public class FullscreenActivity extends AppCompatActivity {
+public class FullscreenActivity extends AppCompatActivity implements GestureDetector.OnGestureListener {
+    private static final String TAG="PlateActivity";
     /**
      * Whether or not the system UI should be auto-hidden after
      * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -40,6 +57,9 @@ public class FullscreenActivity extends AppCompatActivity {
     private static final int UI_ANIMATION_DELAY = 300;
     private final Handler mHideHandler = new Handler();
     private View mContentView;
+    private GestureDetectorCompat mDetector;
+    private Context appContext=this;
+
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
         @Override
@@ -87,6 +107,7 @@ public class FullscreenActivity extends AppCompatActivity {
             if (AUTO_HIDE) {
                 delayedHide(AUTO_HIDE_DELAY_MILLIS);
             }
+            Log.d(TAG,"Cam Button Pressed");
             return false;
         }
     };
@@ -96,28 +117,66 @@ public class FullscreenActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_fullscreen);
-
+        setTitle("Plates");
         mVisible = true;
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = findViewById(R.id.fullscreen_content);
+        mDetector = new GestureDetectorCompat(this,this);
 
 
-        // Set up the user interaction to manually show or hide the system UI.
-        mContentView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                toggle();
-            }
-        });
 
-        // Upon interacting with UI controls, delay any scheduled hide()
-        // operations to prevent the jarring behavior of controls going away
-        // while interacting with the UI.
+
+        final CarouselLayoutManager layoutManager = new CarouselLayoutManager(CarouselLayoutManager.HORIZONTAL);
+
+        final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list_horizontal);
+        initCarousel(recyclerView, layoutManager,new PlateAdapter() );
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
 
         FoodClient foodClient=ServiceGenerator.createService(FoodClient.class);
         Call<List<Menu>> menuCall=foodClient.foodMenu();
         new FetchMenuTask().execute(menuCall);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        this.mDetector.onTouchEvent(event);
+        return super.onTouchEvent(event);
+    }
+
+    @Override
+    public boolean onDown(MotionEvent e) {
+        Log.d(TAG,"OnDown Called");
+        return true;
+    }
+
+    @Override
+    public void onShowPress(MotionEvent e) {
+        Log.d(TAG,"OnShowPress Called");
+    }
+
+    @Override
+    public boolean onSingleTapUp(MotionEvent e) {
+        Log.d(TAG,"OnSingleTapUp called");
+        toggle();
+        return true;
+    }
+
+    @Override
+    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+        Log.d(TAG,"OnScroll Called");
+
+        return true;
+    }
+
+    @Override
+    public void onLongPress(MotionEvent e) {
+        Log.d(TAG,"OnLongPress Called");
+    }
+
+    @Override
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+        Log.d(TAG,"OnFling Called");
+        return true;
     }
 
     @Override
@@ -157,11 +216,16 @@ public class FullscreenActivity extends AppCompatActivity {
         // Show the system bar
         mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+
         mVisible = true;
 
         // Schedule a runnable to display UI elements after a delay
         mHideHandler.removeCallbacks(mHidePart2Runnable);
         mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.hide();
+        }
     }
 
     /**
@@ -171,6 +235,75 @@ public class FullscreenActivity extends AppCompatActivity {
     private void delayedHide(int delayMillis) {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
+    }
+
+    //RecyclerView Stuff
+    private void initCarousel(RecyclerView recyclerView, CarouselLayoutManager layoutManager, final PlateAdapter adapter){
+        layoutManager.setPostLayoutListener(new CarouselZoomPostLayoutListener());
+
+        recyclerView.setLayoutManager(layoutManager);
+        // we expect only fixed sized item for now
+        recyclerView.setHasFixedSize(true);
+        // sample adapter with random data
+        recyclerView.setAdapter(adapter);
+        // enable center post scrolling
+        recyclerView.addOnScrollListener(new CenterScrollListener());
+        // enable center post touching on item and item click listener
+        DefaultChildSelectionListener.initCenterItemListener(new DefaultChildSelectionListener.OnCenterItemClickListener() {
+            @Override
+            public void onCenterItemClicked(@NonNull final RecyclerView recyclerView, @NonNull final CarouselLayoutManager carouselLayoutManager, @NonNull final View v) {
+                final int position = recyclerView.getChildLayoutPosition(v);
+                final String msg = String.format(Locale.US, "Item %1$d was clicked", position);
+                Toast.makeText(FullscreenActivity.this, msg, Toast.LENGTH_SHORT).show();
+            }
+        }, recyclerView, layoutManager);
+
+        layoutManager.addOnItemSelectionListener(new CarouselLayoutManager.OnCenterItemSelectionListener() {
+
+            @Override
+            public void onCenterItemChanged(final int adapterPosition) {
+                if (CarouselLayoutManager.INVALID_POSITION != adapterPosition) {
+                    final int value = adapter.mPosition[adapterPosition];
+/*
+                    adapter.mPosition[adapterPosition] = (value % 10) + (value / 10 + 1) * 10;
+                    adapter.notifyItemChanged(adapterPosition);
+*/
+                }
+            }
+        });
+    }
+
+    private class PlateAdapter extends RecyclerView.Adapter<PlateHolder>{
+        private final int[] mPosition;
+        public PlateAdapter(){
+            mPosition=new int[10];
+            for(int i=0;i<mPosition.length;i++){
+                mPosition[i]=i;
+            }
+        }
+        @Override
+        public PlateHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            LayoutInflater layoutInflater =LayoutInflater.from(appContext);
+            View view =layoutInflater.inflate(R.layout.plate_view_holder,parent,false);
+            return new PlateHolder(view);
+
+        }
+
+        @Override
+        public void onBindViewHolder(PlateHolder holder, int position) {
+
+        }
+
+        @Override
+        public int getItemCount() {
+            return 10; //have to change
+        }
+    }
+
+    private class PlateHolder extends RecyclerView.ViewHolder{
+        public PlateHolder(View view){
+            super(view);
+        }
     }
 
     private class FetchMenuTask extends AsyncTask<Call<List<Menu>>,Void,List<Menu>>{
