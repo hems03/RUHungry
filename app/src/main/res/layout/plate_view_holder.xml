@@ -8,6 +8,7 @@
         android:layout_height="match_parent"
         android:src="@mipmap/ic_launcher"
         android:layout_centerHorizontal="true"
+        android:id="@+id/plate_img"
         />
 
 </RelativeLayout>

@@ -2,11 +2,13 @@ package com.example.h.ruhungry;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.location.Location;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.view.GestureDetectorCompat;
-import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -18,6 +20,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.azoft.carousellayoutmanager.CarouselLayoutManager;
@@ -36,7 +39,7 @@ import retrofit2.Call;
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-public class FullscreenActivity extends AppCompatActivity implements GestureDetector.OnGestureListener {
+public class PlateActivity extends AppCompatActivity implements GestureDetector.OnGestureListener {
     private static final String TAG="PlateActivity";
     /**
      * Whether or not the system UI should be auto-hidden after
@@ -59,6 +62,10 @@ public class FullscreenActivity extends AppCompatActivity implements GestureDete
     private View mContentView;
     private GestureDetectorCompat mDetector;
     private Context appContext=this;
+    private ImageButton captureButton;
+    private RecyclerView plateCarousel;
+
+    private static final int REQUEST_PHOTO=0;
 
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
@@ -107,7 +114,8 @@ public class FullscreenActivity extends AppCompatActivity implements GestureDete
             if (AUTO_HIDE) {
                 delayedHide(AUTO_HIDE_DELAY_MILLIS);
             }
-            Log.d(TAG,"Cam Button Pressed");
+
+
             return false;
         }
     };
@@ -123,18 +131,43 @@ public class FullscreenActivity extends AppCompatActivity implements GestureDete
         mContentView = findViewById(R.id.fullscreen_content);
         mDetector = new GestureDetectorCompat(this,this);
 
+        PackageManager packageManager=getPackageManager();
+        captureButton=(ImageButton)findViewById(R.id.photo_capture_button);
+        final Intent captureImage=new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        boolean canTakePhoto=captureImage.resolveActivity(packageManager)!=null;
+        captureButton.setEnabled(canTakePhoto);
 
-
+        captureButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG,"Cam Button Pressed");
+                startActivityForResult(captureImage,REQUEST_PHOTO);
+            }
+        });
 
         final CarouselLayoutManager layoutManager = new CarouselLayoutManager(CarouselLayoutManager.HORIZONTAL);
 
-        final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list_horizontal);
-        initCarousel(recyclerView, layoutManager,new PlateAdapter() );
-        findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
+        plateCarousel = (RecyclerView) findViewById(R.id.list_horizontal);
+        initCarousel(plateCarousel, layoutManager,new PlateAdapter() );
+        findViewById(R.id.photo_capture_button).setOnTouchListener(mDelayHideTouchListener);
 
         FoodClient foodClient=ServiceGenerator.createService(FoodClient.class);
         Call<List<Menu>> menuCall=foodClient.foodMenu();
         new FetchMenuTask().execute(menuCall);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode){
+            case REQUEST_PHOTO:
+                Bitmap photo = (Bitmap) data.getExtras().get("data");
+                int x=0;
+                /*initCarousel(plateCarousel,
+                        new CarouselLayoutManager(CarouselLayoutManager.HORIZONTAL),
+                        new PlateAdapter());*/
+
+
+        }
     }
 
     @Override
@@ -254,7 +287,7 @@ public class FullscreenActivity extends AppCompatActivity implements GestureDete
             public void onCenterItemClicked(@NonNull final RecyclerView recyclerView, @NonNull final CarouselLayoutManager carouselLayoutManager, @NonNull final View v) {
                 final int position = recyclerView.getChildLayoutPosition(v);
                 final String msg = String.format(Locale.US, "Item %1$d was clicked", position);
-                Toast.makeText(FullscreenActivity.this, msg, Toast.LENGTH_SHORT).show();
+                Toast.makeText(PlateActivity.this, msg, Toast.LENGTH_SHORT).show();
             }
         }, recyclerView, layoutManager);
 
@@ -323,8 +356,8 @@ public class FullscreenActivity extends AppCompatActivity implements GestureDete
         protected void onPostExecute(List<Menu> menus) {
             super.onPostExecute(menus);
             for(Menu m:menus){
-
-                Log.i("Main",m.getLocation_name());
+                List<String>items=m.getMeals().get(0).getGenres().get(0).getItems();
+                Log.i("Main",items.toString());
             }
         }
     }

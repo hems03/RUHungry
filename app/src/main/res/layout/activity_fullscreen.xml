@@ -3,7 +3,7 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent"
              android:background="@color/colorLight"
-             tools:context="com.example.h.ruhungry.FullscreenActivity">
+             tools:context="com.example.h.ruhungry.PlateActivity">
 
     <!-- The primary full-screen view. This can be replaced with whatever view
          is needed to present your content, e.g. VideoView, SurfaceView,
@@ -54,7 +54,7 @@
 
 
             <ImageButton
-                android:id="@+id/dummy_button"
+                android:id="@+id/photo_capture_button"
                 style="?metaButtonBarButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -62,6 +62,7 @@
                 android:text="@string/dummy_button"
                 android:src="@drawable/icon_camera"
                 android:background="@color/colorPrimaryDark"
+
 
                 />
 
