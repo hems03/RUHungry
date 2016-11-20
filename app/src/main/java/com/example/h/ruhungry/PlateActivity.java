@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -21,6 +22,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.azoft.carousellayoutmanager.CarouselLayoutManager;
@@ -29,7 +31,9 @@ import com.azoft.carousellayoutmanager.CenterScrollListener;
 import com.azoft.carousellayoutmanager.DefaultChildSelectionListener;
 
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -148,7 +152,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         final CarouselLayoutManager layoutManager = new CarouselLayoutManager(CarouselLayoutManager.HORIZONTAL);
 
         plateCarousel = (RecyclerView) findViewById(R.id.list_horizontal);
-        initCarousel(plateCarousel, layoutManager,new PlateAdapter() );
+        initCarousel(plateCarousel, layoutManager,new PlateAdapter(this) );
         findViewById(R.id.photo_capture_button).setOnTouchListener(mDelayHideTouchListener);
 
         FoodClient foodClient=ServiceGenerator.createService(FoodClient.class);
@@ -161,7 +165,8 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         switch (requestCode){
             case REQUEST_PHOTO:
                 Bitmap photo = (Bitmap) data.getExtras().get("data");
-                int x=0;
+                PlatesContainer.getPlatesContainer(this).addPlate(new Plate(photo));
+                plateCarousel.getAdapter().notifyDataSetChanged();
                 /*initCarousel(plateCarousel,
                         new CarouselLayoutManager(CarouselLayoutManager.HORIZONTAL),
                         new PlateAdapter());*/
@@ -296,7 +301,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
             @Override
             public void onCenterItemChanged(final int adapterPosition) {
                 if (CarouselLayoutManager.INVALID_POSITION != adapterPosition) {
-                    final int value = adapter.mPosition[adapterPosition];
+                    final int value = adapterPosition;
 /*
                     adapter.mPosition[adapterPosition] = (value % 10) + (value / 10 + 1) * 10;
                     adapter.notifyItemChanged(adapterPosition);
@@ -307,13 +312,16 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
     }
 
     private class PlateAdapter extends RecyclerView.Adapter<PlateHolder>{
-        private final int[] mPosition;
-        public PlateAdapter(){
-            mPosition=new int[10];
-            for(int i=0;i<mPosition.length;i++){
-                mPosition[i]=i;
-            }
+        private PlatesContainer mPlates;
+
+        Context mContext;
+
+        public PlateAdapter(Context context){
+            mPlates=PlatesContainer.getPlatesContainer(context);
+
+
         }
+
         @Override
         public PlateHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             LayoutInflater layoutInflater =LayoutInflater.from(appContext);
@@ -324,12 +332,18 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
 
         @Override
         public void onBindViewHolder(PlateHolder holder, int position) {
-
+            ImageView imageView=(ImageView)holder.itemView.findViewById(R.id.plate_img);
+            //File mPhotoFile=mPlates.getPhotoFile(mPlates.getPlates().get(position));
+            imageView.setImageBitmap(mPlates.getPlates().get(position).getBitmap());
+        }
+        public void addItem(Plate item){
+            mPlates.addPlate(item);
+            notifyDataSetChanged();
         }
 
         @Override
         public int getItemCount() {
-            return 10; //have to change
+            return mPlates.getPlates().size(); //have to change
         }
     }
 
@@ -355,9 +369,10 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         @Override
         protected void onPostExecute(List<Menu> menus) {
             super.onPostExecute(menus);
-            for(Menu m:menus){
-                List<String>items=m.getMeals().get(0).getGenres().get(0).getItems();
-                Log.i("Main",items.toString());
+            if(menus!=null) {
+                for (Menu m : menus) {
+                    Log.i(TAG,m.getLocation_name());
+                }
             }
         }
     }
