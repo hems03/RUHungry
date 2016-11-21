@@ -165,6 +165,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         switch (requestCode){
             case REQUEST_PHOTO:
                 Bitmap photo = (Bitmap) data.getExtras().get("data");
+
                 PlatesContainer.getPlatesContainer(this).addPlate(new Plate(photo));
                 plateCarousel.getAdapter().notifyDataSetChanged();
                 /*initCarousel(plateCarousel,

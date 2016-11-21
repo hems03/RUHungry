@@ -12,7 +12,9 @@ public class Plate {
     private String mImgPath;
     private Bitmap mBitmap;
     private UUID mUUID;
-    public Plate(){
+    public Plate(Bitmap bitmap){
+        mBitmap=bitmap;
+        mUUID=UUID.randomUUID();
 
     }
     public String getImgPath(){

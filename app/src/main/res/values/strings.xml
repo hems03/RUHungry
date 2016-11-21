@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">RUHungry</string>
-
+    <string name="clarifa_api_key">bwrRS6mMNw1o3ZxBK2Ashk4jmySk4TrNzOrzwY8y</string>
+    <string name="clarifa_secret">D9EAKPCY8FxWkwftESoyXzZambequZwDa_XZN0oq</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
 </resources>
