@@ -17,7 +17,7 @@ import com.google.firebase.storage.StorageReference;
  * Created by h on 11/17/2016.
  */
 
-public class MainActivity extends AppCompatActivity{
+public class SignInActivity extends AppCompatActivity{
 
 
 
