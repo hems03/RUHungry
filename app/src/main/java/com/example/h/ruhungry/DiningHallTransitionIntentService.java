@@ -1,8 +1,12 @@
 package com.example.h.ruhungry;
 
 import android.app.IntentService;
+import android.app.Notification;
+import android.content.Context;
 import android.content.Intent;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingEvent;
@@ -32,10 +36,22 @@ public class DiningHallTransitionIntentService extends IntentService {
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL) {
             List triggeringGeofences = geofencingEvent.getTriggeringGeofences();
             Log.i(TAG,triggeringGeofences.toString());
+            NotificationCompat.Builder mBuilder =
+                    new NotificationCompat.Builder(this)
+                            .setSmallIcon(R.drawable.ic_food)
+                            .setContentTitle("You eatin?")
+                            .setContentText("Log what your eating today.")
+                            ;
+
+            Intent resultIntent= new Intent(this,SignInActivity.class);
+
+
 
 
         } else {
 
         }
     }
+
+
 }

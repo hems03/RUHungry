@@ -35,6 +35,7 @@ public class DiningTransitionHelper implements GoogleApiClient.OnConnectionFaile
     private PendingIntent mGeofencePendingIntent;
     private Context mContext;
     private GoogleApiClient mGoogleApiClient;
+    private static int FIRE_INTERVAL=1000*60*5;
     private static final String TAG="DiningTransitionHelper";
 
     public DiningTransitionHelper(Context context ){
@@ -49,7 +50,7 @@ public class DiningTransitionHelper implements GoogleApiClient.OnConnectionFaile
                             entry.getValue().longitude,
                             Constants.GEOFENCE_RADIUS_IN_METERS
                     )
-                    .setExpirationDuration(Constants.GEOFENCE_EXPIRATION_IN_MILLISECONDS)
+                    .setExpirationDuration(Geofence.NEVER_EXPIRE)
                     .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL)
                     .setLoiteringDelay(Constants.LOITERING_DELAY)
                     .build());
@@ -63,14 +64,14 @@ public class DiningTransitionHelper implements GoogleApiClient.OnConnectionFaile
 
 
     }
-    private GeofencingRequest getGeofencingRequest() {
+    public GeofencingRequest getGeofencingRequest() {
         GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
         builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL);
         builder.addGeofences(mGeofences);
         return builder.build();
     }
 
-    private PendingIntent getGeofencePendingIntent() {
+    public PendingIntent getGeofencePendingIntent() {
         // Reuse the PendingIntent if we already have it.
         /*if (mGeofencePendingIntent != null) {
             return mGeofencePendingIntent;
@@ -80,6 +81,8 @@ public class DiningTransitionHelper implements GoogleApiClient.OnConnectionFaile
                 FLAG_UPDATE_CURRENT);
         return mGeofencePendingIntent;
     }
+
+
 
     public void start(){
         mGoogleApiClient.connect();
