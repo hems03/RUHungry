@@ -41,7 +41,7 @@ public class DiningTransitionHelper implements GoogleApiClient.OnConnectionFaile
     public DiningTransitionHelper(Context context ){
         mContext=context;
         mGeofences=new ArrayList<>();
-        for (Map.Entry<String, LatLng> entry:Constants.BAY_AREA_LANDMARKS.entrySet()){
+        for (Map.Entry<String, LatLng> entry:Constants.RU_DINING_HALLS.entrySet()){
             mGeofences.add(new Geofence.Builder()
                     .setRequestId(entry.getKey())
 
