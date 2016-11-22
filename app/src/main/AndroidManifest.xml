@@ -3,6 +3,7 @@
           package="com.example.h.ruhungry">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
 
     <application
@@ -10,6 +11,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
+
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
         <activity
             android:name=".PlateActivity"
@@ -22,7 +24,7 @@
                 <category android:name="android.intent.category.INFO"/>
             </intent-filter>
         </activity>
-        <activity android:name=".MainActivity"
+        <activity android:name=".SignInActivity"
                   android:theme="@style/FullscreenTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

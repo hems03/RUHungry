@@ -4,4 +4,5 @@
     <string name="clarifa_secret">D9EAKPCY8FxWkwftESoyXzZambequZwDa_XZN0oq</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="sign_in">Login</string>
 </resources>

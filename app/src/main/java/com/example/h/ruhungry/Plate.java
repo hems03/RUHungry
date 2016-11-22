@@ -9,20 +9,25 @@ import java.util.UUID;
  */
 
 public class Plate {
-    private String mImgPath;
-    private Bitmap mBitmap;
     private UUID mUUID;
-    public Plate(Bitmap bitmap){
+    private String mBase64Img;
+    private Bitmap mBitmap;
+    public Plate(Bitmap bitmap, UUID id){
         mBitmap=bitmap;
-        mUUID=UUID.randomUUID();
-
+        mUUID=id;
     }
-    public String getImgPath(){
+    /*public String getImgPath(){
         return "IMG_"+getID().toString()+".jpg";
+    }*/
+
+    public UUID getUUID() {
+        return mUUID;
     }
-    public Bitmap getBitmap(){
+
+    public Bitmap getBitmap() {
         return mBitmap;
     }
+
     public UUID getID(){
         return mUUID;
     }

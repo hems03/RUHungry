@@ -22,6 +22,7 @@ public class DiningHallTransitionIntentService extends IntentService {
     }
     @Override
     protected void onHandleIntent(Intent intent) {
+        Log.d(TAG,"Geo Intent Fired");
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
         if (geofencingEvent.hasError()) {
             Log.e(TAG, "Something went wrong!");
@@ -30,7 +31,7 @@ public class DiningHallTransitionIntentService extends IntentService {
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL) {
             List triggeringGeofences = geofencingEvent.getTriggeringGeofences();
-
+            Log.i(TAG,triggeringGeofences.toString());
 
 
         } else {
