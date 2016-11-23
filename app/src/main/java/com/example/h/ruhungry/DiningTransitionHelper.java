@@ -35,7 +35,7 @@ public class DiningTransitionHelper implements GoogleApiClient.OnConnectionFaile
     private PendingIntent mGeofencePendingIntent;
     private Context mContext;
     private GoogleApiClient mGoogleApiClient;
-    private static int FIRE_INTERVAL=1000*60*5;
+
     private static final String TAG="DiningTransitionHelper";
 
     public DiningTransitionHelper(Context context ){
@@ -64,14 +64,14 @@ public class DiningTransitionHelper implements GoogleApiClient.OnConnectionFaile
 
 
     }
-    public GeofencingRequest getGeofencingRequest() {
+    private GeofencingRequest getGeofencingRequest() {
         GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
         builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL);
         builder.addGeofences(mGeofences);
         return builder.build();
     }
 
-    public PendingIntent getGeofencePendingIntent() {
+    private PendingIntent getGeofencePendingIntent() {
         // Reuse the PendingIntent if we already have it.
         /*if (mGeofencePendingIntent != null) {
             return mGeofencePendingIntent;
@@ -92,6 +92,7 @@ public class DiningTransitionHelper implements GoogleApiClient.OnConnectionFaile
     public void onConnected(@Nullable Bundle bundle) {
         Log.d(TAG, "GoogleApi Connected!");
         try {
+
             LocationServices.GeofencingApi.addGeofences(
                     mGoogleApiClient,
                     // The GeofenceRequest object.
@@ -99,6 +100,7 @@ public class DiningTransitionHelper implements GoogleApiClient.OnConnectionFaile
                     getGeofencePendingIntent()
             ).setResultCallback(this);
         }catch (SecurityException e){
+            Toast.makeText(mContext,"Turn on Location",Toast.LENGTH_SHORT);
             e.printStackTrace();
         }
 

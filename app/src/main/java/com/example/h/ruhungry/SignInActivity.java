@@ -3,8 +3,10 @@ package com.example.h.ruhungry;
 import android.*;
 import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -38,6 +40,7 @@ public class SignInActivity extends FragmentActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.sign_in_activity);
+
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
@@ -50,6 +53,7 @@ public class SignInActivity extends FragmentActivity {
             public void onClick(View v) {
                 DiningTransitionHelper transitionHelper= new DiningTransitionHelper(SignInActivity.this.getApplicationContext());
                 transitionHelper.start();
+
                 startActivity(new Intent(SignInActivity.this.getApplicationContext(),PlateActivity.class));
 
             }

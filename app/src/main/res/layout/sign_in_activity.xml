@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:inputType="textEmailAddress"
 
-            android:hint="Email" />
+            android:hint="@string/user_name" />
     </android.support.design.widget.TextInputLayout>
 
     <!-- Password Label -->
