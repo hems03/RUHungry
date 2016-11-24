@@ -16,6 +16,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -127,8 +128,8 @@ public class PlatesContainer {
         //new FetchPredictsTask().execute(data);
 
     }
-    private void loadPlateImages(){
-        databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addValueEventListener(new ValueEventListener() {
+    public void loadPlateImages(){
+        /*databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 
@@ -159,12 +160,59 @@ public class PlatesContainer {
             public void onCancelled(DatabaseError databaseError) {
                 Log.d(TAG, "Error when adding plate image");
             }
-        });
+        });*/
+        databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                final DataSnapshot child=dataSnapshot;
+
+                Target bitmapTarget= new Target() {
+                    @Override
+                    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                        mPlates.add(new Plate(bitmap,UUID.fromString(child.getKey())));
+                        Log.d(TAG, "New Plate Added");
+                    }
+
+                    @Override
+                    public void onBitmapFailed(Drawable errorDrawable) {
+
+                    }
+
+                    @Override
+                    public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                    }
+                };
+                Picasso.with(mContext).load(child.child("URL").getValue().toString()).into(bitmapTarget);
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        }) ;
     }
+
     public ArrayList<Plate>getPlates(){
 
         return mPlates;
     }
+
 
 
 

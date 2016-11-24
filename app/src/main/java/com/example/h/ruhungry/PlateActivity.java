@@ -68,6 +68,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
     private Context appContext=this;
     private ImageButton captureButton;
     private RecyclerView plateCarousel;
+    private PlatesContainer mPlates;
 
     private static final int REQUEST_PHOTO=0;
 
@@ -125,6 +126,11 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
     };
 
     @Override
+    protected void onStart() {
+        super.onStart();
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -134,6 +140,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = findViewById(R.id.fullscreen_content);
         mDetector = new GestureDetectorCompat(this,this);
+        mPlates=PlatesContainer.getPlatesContainer(this);
 
         PackageManager packageManager=getPackageManager();
         captureButton=(ImageButton)findViewById(R.id.photo_capture_button);
@@ -154,7 +161,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         plateCarousel = (RecyclerView) findViewById(R.id.list_horizontal);
         initCarousel(plateCarousel, layoutManager,new PlateAdapter(this) );
         findViewById(R.id.photo_capture_button).setOnTouchListener(mDelayHideTouchListener);
-
+        
         FoodClient foodClient=ServiceGenerator.createMenuService(FoodClient.class);
         Call<List<Menu>> menuCall=foodClient.foodMenu();
         new FetchMenuTask().execute(menuCall);
@@ -319,12 +326,11 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
     }
 
     private class PlateAdapter extends RecyclerView.Adapter<PlateHolder>{
-        private PlatesContainer mPlates;
+
 
         Context mContext;
 
         public PlateAdapter(Context context){
-            mPlates=PlatesContainer.getPlatesContainer(context);
 
 
         }
