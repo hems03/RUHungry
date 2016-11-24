@@ -3,6 +3,7 @@ package com.example.h.ruhungry;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
@@ -15,11 +16,16 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -48,7 +54,9 @@ public class PlatesContainer {
     private FirebaseDatabase mFireBaseDatabase;
     private StorageReference storageRef;
     private DatabaseReference databaseReference;
-    private ArrayList<Plate>mPlates;
+    private  SharedPreferences preferences;
+    final ArrayList<Plate> mPlates;
+
     private static final String CLARIFAI_API_KEY="bwrRS6mMNw1o3ZxBK2Ashk4jmySk4TrNzOrzwY8y";
     private static final String CLARIFAI_API_SECRET="D9EAKPCY8FxWkwftESoyXzZambequZwDa_XZN0oq";
 
@@ -62,6 +70,8 @@ public class PlatesContainer {
         mFireBaseDatabase=FirebaseDatabase.getInstance();
         storageRef= mFirebaseStorage.getReferenceFromUrl("gs://ruhungry-3cda7.appspot.com/");
         databaseReference=mFireBaseDatabase.getReference("https://ruhungry-3cda7.firebaseio.com/".replace('.',','));
+        preferences=PreferenceManager.getDefaultSharedPreferences(mContext);
+        loadPlateImages();
 
        // ImageClient imageClient=ServiceGenerator.createImageService(ImageClient.class);
     }
@@ -88,7 +98,6 @@ public class PlatesContainer {
         final UUID uuid=UUID.randomUUID();
         StorageReference picRef=storageRef.child(m.toString());
         UploadTask uploadTask = picRef.putBytes(data);
-
         uploadTask.addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception exception) {
@@ -104,7 +113,7 @@ public class PlatesContainer {
 
                 SharedPreferences preferences=PreferenceManager.getDefaultSharedPreferences(mContext);
                 databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(newPlate.getID().toString()).child("URL").setValue(downloadUrl.toString());
-                mPlates.add(newPlate);
+
 
 
 
@@ -117,6 +126,40 @@ public class PlatesContainer {
 
         //new FetchPredictsTask().execute(data);
 
+    }
+    private void loadPlateImages(){
+        databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                for(final DataSnapshot child:dataSnapshot.getChildren()){
+                    Target bitmapTarget= new Target() {
+                        @Override
+                        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                            mPlates.add(new Plate(bitmap,UUID.fromString(child.getKey().toString())));
+                            Log.d(TAG, "Plate Added");
+                        }
+
+                        @Override
+                        public void onBitmapFailed(Drawable errorDrawable) {
+
+                        }
+
+                        @Override
+                        public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                        }
+                    };
+                    Picasso.with(mContext).load(child.child("URL").getValue().toString()).into(bitmapTarget);
+                }
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.d(TAG, "Error when adding plate image");
+            }
+        });
     }
     public ArrayList<Plate>getPlates(){
 

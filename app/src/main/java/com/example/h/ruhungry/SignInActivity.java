@@ -47,6 +47,7 @@ public class SignInActivity extends FragmentActivity {
     private Button mLoginButton;
     private EditText mUserEditText;
     private EditText mPassEditText;
+    private MenuItem mProgressIcon;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -60,6 +61,7 @@ public class SignInActivity extends FragmentActivity {
                     4
             );
         }
+        mProgressIcon=(MenuItem)findViewById(R.id.menu_item_progress_bar);
         mUserEditText=(EditText)findViewById(R.id.input_user);
         mPassEditText=(EditText)findViewById(R.id.input_password);
         mLoginButton=(Button)findViewById(R.id.btn_login);
@@ -77,9 +79,12 @@ public class SignInActivity extends FragmentActivity {
 
                 FirebaseDatabase mFireBaseDatabase=FirebaseDatabase.getInstance();
                 final DatabaseReference signInRef=mFireBaseDatabase.getReference("https://ruhungry-3cda7.firebaseio.com/".replace('.',','));
+
+
                 signInRef.child(login).child("PASS").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
+
                         if(dataSnapshot.getValue()==null){
                             Toast toast = Toast.makeText(SignInActivity.this.getApplicationContext(),"Adding New User",Toast.LENGTH_LONG);
                             toast.show();
@@ -119,6 +124,7 @@ public class SignInActivity extends FragmentActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.sign_in_activity,menu);
+
         return true;
     }
 

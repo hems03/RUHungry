@@ -168,7 +168,11 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         switch (requestCode){
             case REQUEST_PHOTO:
                 Bitmap photo = (Bitmap) data.getExtras().get("data");
-                PlatesContainer.getPlatesContainer(this).addPlate(photo);
+                int dim=photo.getWidth();
+                double heightPercent=(double)dim/photo.getHeight();
+                int newHeight=(int)(heightPercent*photo.getHeight());
+                Bitmap resizedBitmap=Bitmap.createBitmap(photo,0,(int)(.5*photo.getHeight()-newHeight/2),photo.getWidth(),(newHeight));
+                PlatesContainer.getPlatesContainer(this).addPlate(resizedBitmap);
                 plateCarousel.getAdapter().notifyDataSetChanged();
                 /*initCarousel(plateCarousel,
                         new CarouselLayoutManager(CarouselLayoutManager.HORIZONTAL),
@@ -337,6 +341,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         public void onBindViewHolder(PlateHolder holder, int position) {
             ImageView imageView=(ImageView)holder.itemView.findViewById(R.id.plate_img);
             //File mPhotoFile=mPlates.getPhotoFile(mPlates.getPlates().get(position));
+
             imageView.setImageBitmap(mPlates.getPlates().get(position).getBitmap());
         }
 
