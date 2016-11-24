@@ -14,11 +14,12 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.MenuItem;
-import android.view.View;
+import android.view.*;
+import android.view.Menu;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.android.gms.auth.api.Auth;
@@ -65,8 +66,12 @@ public class SignInActivity extends FragmentActivity {
         mLoginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               /* DiningTransitionHelper transitionHelper= new DiningTransitionHelper(SignInActivity.this.getApplicationContext());
-                transitionHelper.start();*/
+                if(!sharedPreferences.getBoolean(Constants.GEOFENCE_TOGGLE_KEY,false)){
+                     DiningTransitionHelper transitionHelper= new DiningTransitionHelper(SignInActivity.this.getApplicationContext());
+                        transitionHelper.start();
+                    sharedPreferences.edit().putBoolean(Constants.GEOFENCE_TOGGLE_KEY,true);
+                }
+
                 final String login=mUserEditText.getText().toString();
                 final String pass=mPassEditText.getText().toString();
 
@@ -109,6 +114,12 @@ public class SignInActivity extends FragmentActivity {
 
 
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.sign_in_activity,menu);
+        return true;
     }
 
     @Override
