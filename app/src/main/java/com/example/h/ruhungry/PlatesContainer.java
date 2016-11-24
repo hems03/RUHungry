@@ -13,8 +13,11 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -99,7 +102,7 @@ public class PlatesContainer {
                 Log.d(TAG,"Photo Successfully Uploaded");
 
                 Plate newPlate=new Plate(m,uuid);
-                databaseReference.child("Images").child(newPlate.getID().toString()).setValue(downloadUrl.toString());
+                databaseReference.child("Images").child(newPlate.getID().toString()).child("URL").setValue(downloadUrl.toString());
                 mPlates.add(newPlate);
 
 
@@ -115,33 +118,18 @@ public class PlatesContainer {
 
     }
     public ArrayList<Plate>getPlates(){
-        return mPlates;
-    }
 
-    private static class ConceptTaskParams{
-        Call<ResponseBody>call;
-        String imgBytes;
-        public ConceptTaskParams(Call<ResponseBody>bodyCall, String bytes){
-            call=bodyCall;
-            imgBytes=bytes;
-        }
-    }
-    private class FetchConceptsTask extends AsyncTask<ConceptTaskParams,Void,String>{
-        @Override
-        protected String doInBackground(ConceptTaskParams... params) {
-            ConceptTaskParams param=params[0];
-            Call<ResponseBody>responseBodyCall=param.call;
-            String imgBytes=param.imgBytes;
-            ResponseBody conceptBody=null;
-            try {
-                conceptBody=responseBodyCall.execute().body();
-                Log.d(TAG,"Got Concepts");
-            }catch (IOException e){
-                Log.d(TAG,"Failed to get concepts");
+        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                
             }
 
-            return conceptBody.toString();
-        }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
 

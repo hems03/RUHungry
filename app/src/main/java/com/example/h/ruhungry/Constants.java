@@ -9,8 +9,10 @@ import java.util.HashMap;
  */
 
 public class Constants {
+    public static final String LOGIN_KEY="login_key";
+
     public static final int GEOFENCE_EXPIRATION_IN_MILLISECONDS=300;
-    public static final int GEOFENCE_RADIUS_IN_METERS=100;
+    public static final int GEOFENCE_RADIUS_IN_METERS=150;
     public static final int LOITERING_DELAY=1000*60*10; //NEED TO CHANGE
 
     //SharedPreferences Stuff

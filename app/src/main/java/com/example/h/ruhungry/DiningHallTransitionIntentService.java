@@ -62,11 +62,6 @@ public class DiningHallTransitionIntentService extends IntentService {
                     (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             mNotificationManager.notify(0, mBuilder.build());
 
-
-
-
-
-
         }
     }
 
