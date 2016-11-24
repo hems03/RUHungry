@@ -129,9 +129,9 @@ public class PlatesContainer {
 
     }
     public void loadPlateImages(){
-        /*databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addListenerForSingleValueEvent(new ValueEventListener() {
+        databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            public void onDataChange(DataSnapshot dataSnapshot) { //// FIXME: 11/24/16 
 
                 for(final DataSnapshot child:dataSnapshot.getChildren()){
                     Target bitmapTarget= new Target() {
@@ -160,7 +160,7 @@ public class PlatesContainer {
             public void onCancelled(DatabaseError databaseError) {
                 Log.d(TAG, "Error when adding plate image");
             }
-        });*/
+        });
         databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
