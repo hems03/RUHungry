@@ -2,6 +2,7 @@ package com.example.h.ruhungry;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -13,17 +14,22 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Base64;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -132,7 +138,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
     private final Runnable mHideRunnable = new Runnable() {
         @Override
         public void run() {
-            hide();
+            show();
         }
     };
     /**
@@ -199,14 +205,26 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
 
         plateCarousel = (RecyclerView) findViewById(R.id.list_horizontal);
         loadPlateImages(plateCarousel);
-
-
-
-
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        getMenuInflater().inflate(R.menu.activity_fullscreen,menu);
+        return true;
+    };
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        /*switch (item.getItemId()){
+            case R.id.item_toggle_fullscreen:;
+                toggle();
+                break;
+        }*/
+        return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
         switch (requestCode){
             case REQUEST_PHOTO:
                 Bitmap photo = (Bitmap) data.getExtras().get("data");
@@ -215,7 +233,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                 final int newHeight=(int)(heightPercent*photo.getHeight());
                 Bitmap resizedBitmap=Bitmap.createBitmap(photo,0,(int)(.5*photo.getHeight()-newHeight/2),photo.getWidth(),(newHeight));
 
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
                 byte[] byteData = baos.toByteArray();
                 final String byteString= Base64.encodeToString(byteData,Base64.DEFAULT);
@@ -233,18 +251,69 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                         Uri downloadUrl = taskSnapshot.getDownloadUrl();
                         Log.d(TAG,"Photo Successfully Uploaded");
-                        String strDate=new SimpleDateFormat("yyyyMMdd_HHmmss").format(date);
-                        Plate newPlate=new Plate(downloadUrl.toString(),uuid,strDate);
+                        final String strDate=new SimpleDateFormat("yyyyMMdd_HHmmss").format(date);
+                        final Plate newPlate=new Plate(downloadUrl.toString(),uuid,strDate);
                         mPlates.add(newPlate);
-                        SharedPreferences preferences=PreferenceManager.getDefaultSharedPreferences(PlateActivity.this.getApplicationContext());
+                       final  SharedPreferences preferences=PreferenceManager.getDefaultSharedPreferences(PlateActivity.this.getApplicationContext());
                         preferences.edit().putString(Constants.LAST_ENTRY_KEY,strDate);
                         databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(newPlate.getID().toString()).child("URL").setValue(downloadUrl.toString());
                         databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(newPlate.getID().toString()).child("Date")
                                 .setValue(strDate);
+                        databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(newPlate.getID().toString()).child("concept").addValueEventListener(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                if(dataSnapshot.getValue()!=null&&dataSnapshot.getValue().toString().charAt(0)!='['){
+                                    Log.d(TAG,dataSnapshot.toString());
+                                    String strPlates=dataSnapshot.getValue().toString();
+                                    StringTokenizer stringTokenizer=new StringTokenizer(strPlates,",");
+                                    final String[] concs=new String[5];
+                                    int i=0;
+                                    while(stringTokenizer.hasMoreTokens()){
+                                        concs[i]=stringTokenizer.nextToken();
+                                        i++;
+                                    }
+
+                                    final ArrayList<String> checkedConcepts= new ArrayList<String>();
+                                    AlertDialog.Builder builder=new AlertDialog.Builder(PlateActivity.this);
+                                    builder.setTitle("Select foods");
+                                    builder.setMultiChoiceItems(concs, null, new DialogInterface.OnMultiChoiceClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i, boolean b) {
+                                            if(b){
+                                                checkedConcepts.add(concs[i]);
+                                            }else{
+                                                if(checkedConcepts.contains(concs[i])){
+                                                    checkedConcepts.remove(checkedConcepts.indexOf(concs[i]));
+                                                }
+                                            }
+
+                                        }
+                                    }).setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            mPlates.get(mPlates.size()-1).setmConcepts(checkedConcepts);
+                                            databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03"))
+                                                    .child("Images").child(newPlate.getID().toString()).child("concept").setValue(checkedConcepts.toString());
+
+                                        }
+                                    });
+                                    builder.create().show();
+
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
+
+
+
                     }
                 });
 
-                plateCarousel.getAdapter().notifyDataSetChanged();
+
 
         }
     }
@@ -381,39 +450,19 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                     plate.setmConcepts(conceptList);
                     mPlates.add(plate);
                 }
-                CarouselLayoutManager layoutManager= new CarouselLayoutManager(CarouselLayoutManager.HORIZONTAL);
+                StaggeredGridLayoutManager layoutManager=new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL);
                 PlateAdapter adapter= new PlateAdapter(PlateActivity.this.getApplicationContext());
 
-                layoutManager.setPostLayoutListener(new CarouselZoomPostLayoutListener());
+                //layoutManager.setPostLayoutListener(new CarouselZoomPostLayoutListener());
                 recyclerView.setLayoutManager(layoutManager);
-                recyclerView.setHasFixedSize(true);
+                //recyclerView.setHasFixedSize(true);
                 recyclerView.setAdapter(adapter);
                 // enable center post scrolling
-                recyclerView.addOnScrollListener(new CenterScrollListener());
+               // recyclerView.addOnScrollListener(new CenterScrollListener());
                 // enable center post touching on item and item click listener
-                DefaultChildSelectionListener.initCenterItemListener(new DefaultChildSelectionListener.OnCenterItemClickListener() {
-                    @Override
-                    public void onCenterItemClicked(@NonNull final RecyclerView recyclerView, @NonNull final CarouselLayoutManager carouselLayoutManager, @NonNull final View v) {
-                        final int position = recyclerView.getChildLayoutPosition(v);
-                        final String msg = String.format(Locale.US, "Item %1$d was clicked", position);
-                        Toast.makeText(PlateActivity.this.getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
-                    }
-                }, recyclerView, layoutManager);
 
-                layoutManager.addOnItemSelectionListener(new CarouselLayoutManager.OnCenterItemSelectionListener() {
 
-                    @Override
-                    public void onCenterItemChanged(final int adapterPosition) {
-                        if (CarouselLayoutManager.INVALID_POSITION != adapterPosition) {
-                            final int value = adapterPosition;
-/*
-                    adapter.mPosition[adapterPosition] = (value % 10) + (value / 10 + 1) * 10;
-                    adapter.notifyItemChanged(adapterPosition);
-*/
-                        }
-                    }
-                }
-                );
+
                newItems.setVal(true);
 
             }
