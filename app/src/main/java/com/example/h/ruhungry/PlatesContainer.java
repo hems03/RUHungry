@@ -9,9 +9,16 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.RecyclerView;
 import android.util.Base64;
 import android.util.Log;
+import android.view.View;
+import android.widget.Toast;
 
+import com.azoft.carousellayoutmanager.CarouselLayoutManager;
+import com.azoft.carousellayoutmanager.CarouselZoomPostLayoutListener;
+import com.azoft.carousellayoutmanager.CenterScrollListener;
+import com.azoft.carousellayoutmanager.DefaultChildSelectionListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -29,11 +36,13 @@ import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import clarifai2.api.ClarifaiBuilder;
@@ -56,6 +65,7 @@ public class PlatesContainer {
     private StorageReference storageRef;
     private DatabaseReference databaseReference;
     private  SharedPreferences preferences;
+
     final ArrayList<Plate> mPlates;
 
     private static final String CLARIFAI_API_KEY="bwrRS6mMNw1o3ZxBK2Ashk4jmySk4TrNzOrzwY8y";
@@ -72,7 +82,7 @@ public class PlatesContainer {
         storageRef= mFirebaseStorage.getReferenceFromUrl("gs://ruhungry-3cda7.appspot.com/");
         databaseReference=mFireBaseDatabase.getReference("https://ruhungry-3cda7.firebaseio.com/".replace('.',','));
         preferences=PreferenceManager.getDefaultSharedPreferences(mContext);
-        loadPlateImages();
+
 
        // ImageClient imageClient=ServiceGenerator.createImageService(ImageClient.class);
     }
@@ -128,11 +138,10 @@ public class PlatesContainer {
         //new FetchPredictsTask().execute(data);
 
     }
-    public void loadPlateImages(){
-        /*databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addListenerForSingleValueEvent(new ValueEventListener() {
+    public void loadPlateImages(final RecyclerView recyclerView, final CarouselLayoutManager layoutManager, final PlateActivity.PlateAdapter adapter){
+        databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-
                 for(final DataSnapshot child:dataSnapshot.getChildren()){
                     Target bitmapTarget= new Target() {
                         @Override
@@ -140,36 +149,61 @@ public class PlatesContainer {
                             mPlates.add(new Plate(bitmap,UUID.fromString(child.getKey().toString())));
                             Log.d(TAG, "Plate Added");
                         }
-
                         @Override
                         public void onBitmapFailed(Drawable errorDrawable) {
-
                         }
-
                         @Override
                         public void onPrepareLoad(Drawable placeHolderDrawable) {
-
                         }
                     };
                     Picasso.with(mContext).load(child.child("URL").getValue().toString()).into(bitmapTarget);
                 }
+                layoutManager.setPostLayoutListener(new CarouselZoomPostLayoutListener());
+                recyclerView.setLayoutManager(layoutManager);
+                recyclerView.setHasFixedSize(true);
+                recyclerView.setAdapter(adapter);
+                // enable center post scrolling
+                recyclerView.addOnScrollListener(new CenterScrollListener());
+                // enable center post touching on item and item click listener
+                DefaultChildSelectionListener.initCenterItemListener(new DefaultChildSelectionListener.OnCenterItemClickListener() {
+                    @Override
+                    public void onCenterItemClicked(@NonNull final RecyclerView recyclerView, @NonNull final CarouselLayoutManager carouselLayoutManager, @NonNull final View v) {
+                        final int position = recyclerView.getChildLayoutPosition(v);
+                        final String msg = String.format(Locale.US, "Item %1$d was clicked", position);
+                        Toast.makeText(mContext, msg, Toast.LENGTH_SHORT).show();
+                    }
+                }, recyclerView, layoutManager);
 
+                layoutManager.addOnItemSelectionListener(new CarouselLayoutManager.OnCenterItemSelectionListener() {
+
+                    @Override
+                    public void onCenterItemChanged(final int adapterPosition) {
+                        if (CarouselLayoutManager.INVALID_POSITION != adapterPosition) {
+                            final int value = adapterPosition;
+/*
+                    adapter.mPosition[adapterPosition] = (value % 10) + (value / 10 + 1) * 10;
+                    adapter.notifyItemChanged(adapterPosition);
+*/
+                        }
+                    }
+                });
             }
-
             @Override
             public void onCancelled(DatabaseError databaseError) {
                 Log.d(TAG, "Error when adding plate image");
             }
-        });*/
+        });
         databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+
                 final DataSnapshot child=dataSnapshot;
 
                 Target bitmapTarget= new Target() {
                     @Override
                     public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
                         mPlates.add(new Plate(bitmap,UUID.fromString(child.getKey())));
+                        adapter.notifyDataSetChanged();
                         Log.d(TAG, "New Plate Added");
                     }
 
@@ -184,6 +218,18 @@ public class PlatesContainer {
                     }
                 };
                 Picasso.with(mContext).load(child.child("URL").getValue().toString()).into(bitmapTarget);
+                databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(child.getKey().toString()).child("concept").addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        Log.d(TAG,dataSnapshot.getValue().toString());
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
             }
 
             @Override
@@ -206,6 +252,8 @@ public class PlatesContainer {
 
             }
         }) ;
+
+
     }
 
     public ArrayList<Plate>getPlates(){

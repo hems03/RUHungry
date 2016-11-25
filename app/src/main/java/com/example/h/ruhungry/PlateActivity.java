@@ -291,41 +291,10 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
 
     //RecyclerView Stuff
     private void initCarousel(RecyclerView recyclerView, CarouselLayoutManager layoutManager, final PlateAdapter adapter){
-        layoutManager.setPostLayoutListener(new CarouselZoomPostLayoutListener());
-
-        recyclerView.setLayoutManager(layoutManager);
-        // we expect only fixed sized item for now
-        recyclerView.setHasFixedSize(true);
-        // sample adapter with random data
-        recyclerView.setAdapter(adapter);
-        // enable center post scrolling
-        recyclerView.addOnScrollListener(new CenterScrollListener());
-        // enable center post touching on item and item click listener
-        DefaultChildSelectionListener.initCenterItemListener(new DefaultChildSelectionListener.OnCenterItemClickListener() {
-            @Override
-            public void onCenterItemClicked(@NonNull final RecyclerView recyclerView, @NonNull final CarouselLayoutManager carouselLayoutManager, @NonNull final View v) {
-                final int position = recyclerView.getChildLayoutPosition(v);
-                final String msg = String.format(Locale.US, "Item %1$d was clicked", position);
-                Toast.makeText(PlateActivity.this, msg, Toast.LENGTH_SHORT).show();
-            }
-        }, recyclerView, layoutManager);
-
-        layoutManager.addOnItemSelectionListener(new CarouselLayoutManager.OnCenterItemSelectionListener() {
-
-            @Override
-            public void onCenterItemChanged(final int adapterPosition) {
-                if (CarouselLayoutManager.INVALID_POSITION != adapterPosition) {
-                    final int value = adapterPosition;
-/*
-                    adapter.mPosition[adapterPosition] = (value % 10) + (value / 10 + 1) * 10;
-                    adapter.notifyItemChanged(adapterPosition);
-*/
-                }
-            }
-        });
+        mPlates.loadPlateImages(recyclerView,layoutManager,adapter);
     }
 
-    private class PlateAdapter extends RecyclerView.Adapter<PlateHolder>{
+    public class PlateAdapter extends RecyclerView.Adapter<PlateHolder>{
 
 
         Context mContext;
@@ -358,7 +327,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         }
     }
 
-    private class PlateHolder extends RecyclerView.ViewHolder{
+    public class PlateHolder extends RecyclerView.ViewHolder{
         public PlateHolder(View view){
             super(view);
         }
