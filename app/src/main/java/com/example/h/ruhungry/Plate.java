@@ -2,6 +2,8 @@ package com.example.h.ruhungry;
 
 import android.graphics.Bitmap;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -10,11 +12,15 @@ import java.util.UUID;
 
 public class Plate {
     private UUID mUUID;
-    private String mBase64Img;
-    private Bitmap mBitmap;
-    public Plate(Bitmap bitmap, UUID id){
-        mBitmap=bitmap;
+    private String mPlateURL;
+    private String mDate;
+    private ArrayList<String> mConcepts;
+
+    public Plate(String plateURL, UUID id, String date){
+        mPlateURL=plateURL;
         mUUID=id;
+        mDate=date;
+
     }
     /*public String getImgPath(){
         return "IMG_"+getID().toString()+".jpg";
@@ -24,11 +30,27 @@ public class Plate {
         return mUUID;
     }
 
-    public Bitmap getBitmap() {
-        return mBitmap;
+    public String getPlateURL() {
+        return mPlateURL;
     }
 
     public UUID getID(){
         return mUUID;
+    }
+
+    public String getDate() {
+        return mDate;
+    }
+
+    public void setDate(String mDate) {
+        this.mDate = mDate;
+    }
+
+    public ArrayList<String> getmConcepts() {
+        return mConcepts;
+    }
+
+    public void setmConcepts(ArrayList<String> mConcepts) {
+        this.mConcepts = mConcepts;
     }
 }

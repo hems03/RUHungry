@@ -10,6 +10,7 @@ import java.util.HashMap;
 
 public class Constants {
     public static final String LOGIN_KEY="login_key";
+    public static final String LAST_ENTRY_KEY="last_entry";
     public static final String GEOFENCE_TOGGLE_KEY="geofence_toggle";
 
     public static final int GEOFENCE_EXPIRATION_IN_MILLISECONDS=300;

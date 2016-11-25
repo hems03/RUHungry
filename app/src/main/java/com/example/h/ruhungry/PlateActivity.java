@@ -3,10 +3,12 @@ package com.example.h.ruhungry;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.view.GestureDetectorCompat;
@@ -15,6 +17,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.widget.RecyclerView;
+import android.util.Base64;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
@@ -29,13 +32,29 @@ import com.azoft.carousellayoutmanager.CarouselLayoutManager;
 import com.azoft.carousellayoutmanager.CarouselZoomPostLayoutListener;
 import com.azoft.carousellayoutmanager.CenterScrollListener;
 import com.azoft.carousellayoutmanager.DefaultChildSelectionListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.StringTokenizer;
+import java.util.UUID;
 
 import retrofit2.Call;
 
@@ -68,7 +87,15 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
     private Context appContext=this;
     private ImageButton captureButton;
     private RecyclerView plateCarousel;
-    private PlatesContainer mPlates;
+
+
+    private FirebaseStorage mFirebaseStorage;
+    private FirebaseDatabase mFireBaseDatabase;
+    private StorageReference storageRef;
+    private DatabaseReference databaseReference;
+    private SharedPreferences preferences;
+
+    private ArrayList<Plate>mPlates;
 
     private static final int REQUEST_PHOTO=0;
 
@@ -140,7 +167,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = findViewById(R.id.fullscreen_content);
         mDetector = new GestureDetectorCompat(this,this);
-        mPlates=PlatesContainer.getPlatesContainer(this);
+        mPlates=new ArrayList<>();
 
         PackageManager packageManager=getPackageManager();
         captureButton=(ImageButton)findViewById(R.id.photo_capture_button);
@@ -156,15 +183,23 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
             }
         });
 
-        final CarouselLayoutManager layoutManager = new CarouselLayoutManager(CarouselLayoutManager.HORIZONTAL);
+
+
+
+        findViewById(R.id.photo_capture_button).setOnTouchListener(mDelayHideTouchListener);
+
+
+
+        mFirebaseStorage= FirebaseStorage.getInstance();
+        mFireBaseDatabase=FirebaseDatabase.getInstance();
+        storageRef= mFirebaseStorage.getReferenceFromUrl("gs://ruhungry-3cda7.appspot.com/");
+        databaseReference=mFireBaseDatabase.getReference("https://ruhungry-3cda7.firebaseio.com/".replace('.',','));
+        preferences= PreferenceManager.getDefaultSharedPreferences(this);
+
 
         plateCarousel = (RecyclerView) findViewById(R.id.list_horizontal);
-        initCarousel(plateCarousel, layoutManager,new PlateAdapter(this) );
-        findViewById(R.id.photo_capture_button).setOnTouchListener(mDelayHideTouchListener);
-        
-        FoodClient foodClient=ServiceGenerator.createMenuService(FoodClient.class);
-        Call<List<Menu>> menuCall=foodClient.foodMenu();
-        new FetchMenuTask().execute(menuCall);
+        loadPlateImages(plateCarousel);
+
 
 
 
@@ -177,14 +212,39 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                 Bitmap photo = (Bitmap) data.getExtras().get("data");
                 int dim=photo.getWidth();
                 double heightPercent=(double)dim/photo.getHeight();
-                int newHeight=(int)(heightPercent*photo.getHeight());
+                final int newHeight=(int)(heightPercent*photo.getHeight());
                 Bitmap resizedBitmap=Bitmap.createBitmap(photo,0,(int)(.5*photo.getHeight()-newHeight/2),photo.getWidth(),(newHeight));
-                PlatesContainer.getPlatesContainer(this).addPlate(resizedBitmap);
-                plateCarousel.getAdapter().notifyDataSetChanged();
-                /*initCarousel(plateCarousel,
-                        new CarouselLayoutManager(CarouselLayoutManager.HORIZONTAL),
-                        new PlateAdapter());*/
 
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                byte[] byteData = baos.toByteArray();
+                final String byteString= Base64.encodeToString(byteData,Base64.DEFAULT);
+                final UUID uuid=UUID.randomUUID();
+                final java.util.Date date=new java.util.Date();
+                StorageReference picRef=storageRef.child(date.toString());
+                UploadTask uploadTask = picRef.putBytes(byteData);
+                uploadTask.addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        Log.e(TAG,exception.toString());
+                    }
+                }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                        Log.d(TAG,"Photo Successfully Uploaded");
+                        String strDate=new SimpleDateFormat("yyyyMMdd_HHmmss").format(date);
+                        Plate newPlate=new Plate(downloadUrl.toString(),uuid,strDate);
+                        mPlates.add(newPlate);
+                        SharedPreferences preferences=PreferenceManager.getDefaultSharedPreferences(PlateActivity.this.getApplicationContext());
+                        preferences.edit().putString(Constants.LAST_ENTRY_KEY,strDate);
+                        databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(newPlate.getID().toString()).child("URL").setValue(downloadUrl.toString());
+                        databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(newPlate.getID().toString()).child("Date")
+                                .setValue(strDate);
+                    }
+                });
+
+                plateCarousel.getAdapter().notifyDataSetChanged();
 
         }
     }
@@ -289,10 +349,115 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
 
-    //RecyclerView Stuff
-    private void initCarousel(RecyclerView recyclerView, CarouselLayoutManager layoutManager, final PlateAdapter adapter){
-        mPlates.loadPlateImages(recyclerView,layoutManager,adapter);
+    private class BooleanObj{
+        boolean mVal;
+        public BooleanObj(boolean val){
+            mVal=val;
+        }
+
+        public boolean isVal() {
+            return mVal;
+        }
+
+        public void setVal(boolean mVal) {
+            this.mVal = mVal;
+        }
     }
+
+    public void loadPlateImages(final RecyclerView recyclerView){
+        final BooleanObj newItems=new BooleanObj(false);
+        databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for(final DataSnapshot child:dataSnapshot.getChildren()){
+                    DataSnapshot URLChild=child.child("URL");
+                    Plate plate=new Plate(URLChild.getValue().toString(), UUID.fromString(child.getKey().toString()),child.child("Date").toString());
+                    String strConcs= child.child("concept").getValue().toString();
+                    StringTokenizer stringTokenizer=new StringTokenizer(strConcs,",");
+                    ArrayList<String>conceptList=new ArrayList<String>();
+                    while(stringTokenizer.hasMoreTokens()){
+                        conceptList.add(stringTokenizer.nextToken());
+                    }
+                    plate.setmConcepts(conceptList);
+                    mPlates.add(plate);
+                }
+                CarouselLayoutManager layoutManager= new CarouselLayoutManager(CarouselLayoutManager.HORIZONTAL);
+                PlateAdapter adapter= new PlateAdapter(PlateActivity.this.getApplicationContext());
+
+                layoutManager.setPostLayoutListener(new CarouselZoomPostLayoutListener());
+                recyclerView.setLayoutManager(layoutManager);
+                recyclerView.setHasFixedSize(true);
+                recyclerView.setAdapter(adapter);
+                // enable center post scrolling
+                recyclerView.addOnScrollListener(new CenterScrollListener());
+                // enable center post touching on item and item click listener
+                DefaultChildSelectionListener.initCenterItemListener(new DefaultChildSelectionListener.OnCenterItemClickListener() {
+                    @Override
+                    public void onCenterItemClicked(@NonNull final RecyclerView recyclerView, @NonNull final CarouselLayoutManager carouselLayoutManager, @NonNull final View v) {
+                        final int position = recyclerView.getChildLayoutPosition(v);
+                        final String msg = String.format(Locale.US, "Item %1$d was clicked", position);
+                        Toast.makeText(PlateActivity.this.getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+                    }
+                }, recyclerView, layoutManager);
+
+                layoutManager.addOnItemSelectionListener(new CarouselLayoutManager.OnCenterItemSelectionListener() {
+
+                    @Override
+                    public void onCenterItemChanged(final int adapterPosition) {
+                        if (CarouselLayoutManager.INVALID_POSITION != adapterPosition) {
+                            final int value = adapterPosition;
+/*
+                    adapter.mPosition[adapterPosition] = (value % 10) + (value / 10 + 1) * 10;
+                    adapter.notifyItemChanged(adapterPosition);
+*/
+                        }
+                    }
+                }
+                );
+               newItems.setVal(true);
+
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.d(TAG, "Error when adding plate image");
+            }
+        });
+        databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                if(!newItems.mVal){
+                    return;
+                }
+
+                Log.d(TAG,dataSnapshot.toString());
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+
+        });
+
+
+    }
+
+
 
     public class PlateAdapter extends RecyclerView.Adapter<PlateHolder>{
 
@@ -300,7 +465,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         Context mContext;
 
         public PlateAdapter(Context context){
-
+            mContext=context;
 
         }
 
@@ -314,22 +479,27 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
 
         @Override
         public void onBindViewHolder(PlateHolder holder, int position) {
-            ImageView imageView=(ImageView)holder.itemView.findViewById(R.id.plate_img);
+            PlateImageLoader.loadImage(holder,mPlates.get(position).getPlateURL(),mContext);
             //File mPhotoFile=mPlates.getPhotoFile(mPlates.getPlates().get(position));
 
-            imageView.setImageBitmap(mPlates.getPlates().get(position).getBitmap());
         }
 
 
         @Override
         public int getItemCount() {
-            return mPlates.getPlates().size(); //have to change
+            return mPlates.size(); //have to change
         }
     }
 
     public class PlateHolder extends RecyclerView.ViewHolder{
+        ImageView mPlateView;
         public PlateHolder(View view){
             super(view);
+            mPlateView=(ImageView)view.findViewById(R.id.plate_img);
+
+        }
+        public void setBitmap(Bitmap bitmap){
+            mPlateView.setImageBitmap(bitmap);
         }
     }
 
@@ -356,4 +526,5 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
             }
         }
     }
+
 }
