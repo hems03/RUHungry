@@ -20,6 +20,7 @@ public class Plate {
         mPlateURL=plateURL;
         mUUID=id;
         mDate=date;
+        mConcepts=new ArrayList<>();
 
     }
     /*public String getImgPath(){

@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorHaze">#FFEBBB</color>
+    <color name="colorHaze">#FFCDD2</color>
     <color name="colorPrimaryDark">#B71C1C</color>
     <color name="colorAccent">#FF4081</color>
     <color name="colorLight">#F44336</color>
     <color name="black_overlay">#66000000</color>
     <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
 </resources>

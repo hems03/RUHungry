@@ -15,7 +15,7 @@ public class Constants {
 
     public static final int GEOFENCE_EXPIRATION_IN_MILLISECONDS=300;
     public static final int GEOFENCE_RADIUS_IN_METERS=150;
-    public static final int LOITERING_DELAY=1000*60*10; //NEED TO CHANGE
+    public static final int LOITERING_DELAY=1000*60/2; //NEED TO CHANGE
 
     //SharedPreferences Stuff
     public static final String PREF_NAME="my_shared_preferences";
@@ -31,5 +31,7 @@ public class Constants {
 
 
         RU_DINING_HALLS.put("Brower Commons", new LatLng(40.503652, -74.451679));
+
+        RU_DINING_HALLS.put("Your House", new LatLng(40.548891, -74.414121));
     }
 }

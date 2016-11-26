@@ -32,6 +32,7 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.azoft.carousellayoutmanager.CarouselLayoutManager;
@@ -87,12 +88,15 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
      * and a change of the status and navigation bar.
      */
     private static final int UI_ANIMATION_DELAY = 300;
+    public static final String EXTRA_TRANSITION_HELPER="DINING_TRANSITION_HELPER";
     private final Handler mHideHandler = new Handler();
     private View mContentView;
     private GestureDetectorCompat mDetector;
     private Context appContext=this;
     private ImageButton captureButton;
     private RecyclerView plateCarousel;
+    private SharedPreferences sharedPreferences;
+    private DiningTransitionHelper mDiningTransitionHelper;
 
 
     private FirebaseStorage mFirebaseStorage;
@@ -205,6 +209,16 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
 
         plateCarousel = (RecyclerView) findViewById(R.id.list_horizontal);
         loadPlateImages(plateCarousel);
+
+        sharedPreferences=PreferenceManager.getDefaultSharedPreferences(this);
+        mDiningTransitionHelper=new DiningTransitionHelper(this);
+
+        if(!sharedPreferences.getBoolean(Constants.GEOFENCE_TOGGLE_KEY,false)){
+           mDiningTransitionHelper.start();
+
+
+            sharedPreferences.edit().putBoolean(Constants.GEOFENCE_TOGGLE_KEY,true);
+        }
     }
 
     @Override
@@ -215,11 +229,16 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        /*switch (item.getItemId()){
-            case R.id.item_toggle_fullscreen:;
-                toggle();
+        switch (item.getItemId()){
+            case R.id.item_refresh:;
+                plateCarousel.getAdapter().notifyDataSetChanged();
                 break;
-        }*/
+            case R.id.location_toggle:
+                mDiningTransitionHelper.end();
+                Toast.makeText(this,"Geofences removed",Toast.LENGTH_SHORT).show();
+                break;
+
+        }
         return true;
     }
 
@@ -291,14 +310,22 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                                     }).setPositiveButton("OK", new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialogInterface, int i) {
-                                            mPlates.get(mPlates.size()-1).setmConcepts(checkedConcepts);
+
                                             databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03"))
                                                     .child("Images").child(newPlate.getID().toString()).child("concept").setValue(checkedConcepts.toString());
+
 
                                         }
                                     });
                                     builder.create().show();
-
+                                }else if (dataSnapshot.getValue()!=null&&dataSnapshot.getValue().toString().charAt(0)=='['){
+                                    StringTokenizer tokenizer= new StringTokenizer(dataSnapshot.getValue().toString(),"[,");
+                                    ArrayList<String>strConcepts= new ArrayList<String>();
+                                    while(tokenizer.hasMoreTokens()){
+                                        strConcepts.add(tokenizer.nextToken());
+                                    }
+                                    mPlates.get(mPlates.size()-1).setmConcepts(strConcepts);
+                                    plateCarousel.getAdapter().notifyDataSetChanged();
                                 }
                             }
 
@@ -529,6 +556,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         @Override
         public void onBindViewHolder(PlateHolder holder, int position) {
             PlateImageLoader.loadImage(holder,mPlates.get(position).getPlateURL(),mContext);
+            holder.setConcepts(mPlates.get(position).getmConcepts().toString().replace("[","").replace("]",""));
             //File mPhotoFile=mPlates.getPhotoFile(mPlates.getPlates().get(position));
 
         }
@@ -542,13 +570,19 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
 
     public class PlateHolder extends RecyclerView.ViewHolder{
         ImageView mPlateView;
+        TextView mConceptsTextview;
         public PlateHolder(View view){
             super(view);
             mPlateView=(ImageView)view.findViewById(R.id.plate_img);
+            mConceptsTextview=(TextView)view.findViewById(R.id.concept_textview);
 
         }
         public void setBitmap(Bitmap bitmap){
             mPlateView.setImageBitmap(bitmap);
+        }
+
+        public void setConcepts(String concepts){
+            mConceptsTextview.setText(concepts);
         }
     }
 

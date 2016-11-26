@@ -14,13 +14,25 @@
         >
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            >
             <com.makeramen.roundedimageview.RoundedImageView
                 android:layout_width="200dp"
                 android:layout_height="200dp"
                 android:src="@mipmap/ic_launcher"
                 android:layout_gravity="center_horizontal"
                 android:id="@+id/plate_img"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CONCEPTS"
+                android:layout_gravity="center"
+                android:textSize="20sp"
+                android:textColor="@color/black"
+                android:id="@+id/concept_textview"
                 />
 
 

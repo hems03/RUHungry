@@ -43,7 +43,6 @@ import com.google.firebase.storage.StorageReference;
 
 public class SignInActivity extends FragmentActivity {
     private static final String TAG="SignInActivity";
-    private GoogleApiClient mGoogleApiClient;
     private Button mLoginButton;
     private EditText mUserEditText;
     private EditText mPassEditText;
@@ -61,6 +60,7 @@ public class SignInActivity extends FragmentActivity {
                     4
             );
         }
+
         mProgressIcon=(MenuItem)findViewById(R.id.menu_item_progress_bar);
         mUserEditText=(EditText)findViewById(R.id.input_user);
         mPassEditText=(EditText)findViewById(R.id.input_password);
@@ -91,13 +91,16 @@ public class SignInActivity extends FragmentActivity {
                              Log.d("SignInActivity","Making new user");
                             signInRef.child(login).child("PASS").setValue(pass);
                             sharedPreferences.edit().putString(Constants.LOGIN_KEY,login).apply();
+
                             startActivity(new Intent(SignInActivity.this.getApplicationContext(),PlateActivity.class));
                         }else if(dataSnapshot.getValue().equals(pass)){
                             Toast toast = Toast.makeText(SignInActivity.this.getApplicationContext(),"Login Successful",Toast.LENGTH_LONG);
                             toast.show();
                             Log.d("SignInActivity","Login successful");
                             sharedPreferences.edit().putString(Constants.LOGIN_KEY,login).apply();
-                            startActivity(new Intent(SignInActivity.this.getApplicationContext(),PlateActivity.class));
+
+                            Intent plateIntent=new Intent(SignInActivity.this.getApplicationContext(),PlateActivity.class);
+                            startActivity(plateIntent);
                         }else{
                             Toast toast = Toast.makeText(SignInActivity.this.getApplicationContext(),"Login Unsuccessful. Try Again",Toast.LENGTH_LONG);
                             toast.show();
