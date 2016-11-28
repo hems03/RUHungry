@@ -78,7 +78,7 @@ public class DiningTransitionHelper implements GoogleApiClient.OnConnectionFaile
             return mGeofencePendingIntent;
         }*/
         Intent intent = new Intent(mContext, DiningHallTransitionIntentService.class);
-        mGeofencePendingIntent=PendingIntent.getService(mContext, 0, intent, PendingIntent.
+        mGeofencePendingIntent=PendingIntent.getBroadcast(mContext, 0, intent, PendingIntent.
                 FLAG_UPDATE_CURRENT);
         return mGeofencePendingIntent;
     }

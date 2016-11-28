@@ -4,6 +4,7 @@ import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
@@ -22,14 +23,16 @@ import static android.content.ContentValues.TAG;
  * Created by h on 11/18/2016.
  */
 
-public class DiningHallTransitionIntentService extends IntentService {
-    private static final String TAG="DiningService";
-    public DiningHallTransitionIntentService(){
-        super(TAG);
+public class DiningHallTransitionIntentService extends BroadcastReceiver {
+    private static final String TAG = "DiningService";
+
+    public DiningHallTransitionIntentService() {
+        super();
     }
+
     @Override
-    protected void onHandleIntent(Intent intent) {
-        Log.d(TAG,"Geo Intent Fired");
+    public void onReceive(Context context, Intent intent) {
+        Log.d(TAG, "Geo Intent Fired");
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
         if (geofencingEvent.hasError()) {
             Log.e(TAG, "Something went wrong!");
@@ -38,18 +41,17 @@ public class DiningHallTransitionIntentService extends IntentService {
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL) {
             List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
-            Log.i(TAG,triggeringGeofences.toString());
+            Log.i(TAG, triggeringGeofences.toString());
 
 
             NotificationCompat.Builder mBuilder =
-                    new NotificationCompat.Builder(this)
+                    new NotificationCompat.Builder(context)
                             .setSmallIcon(R.drawable.ic_food)
-                            .setContentTitle("Are you at "+triggeringGeofences.get(0).getRequestId())
+                            .setContentTitle("Are you at " + triggeringGeofences.get(0).getRequestId())
                             .setContentText("Log what you're eating")
-                            .setAutoCancel(true)
-                            ;
-            Intent resultIntent= new Intent(this,SignInActivity.class);
-            TaskStackBuilder taskStackBuilder=TaskStackBuilder.create(this);
+                            .setAutoCancel(true);
+            Intent resultIntent = new Intent(context, SignInActivity.class);
+            TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
             taskStackBuilder.addParentStack(SignInActivity.class);
             taskStackBuilder.addNextIntent(resultIntent);
             PendingIntent resultPendingIntent =
@@ -59,11 +61,8 @@ public class DiningHallTransitionIntentService extends IntentService {
                     );
             mBuilder.setContentIntent(resultPendingIntent);
             NotificationManager mNotificationManager =
-                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             mNotificationManager.notify(0, mBuilder.build());
-
         }
     }
-
-
 }
