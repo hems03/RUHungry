@@ -248,7 +248,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
             case R.id.item_refresh:;
                 plateCarousel.getAdapter().notifyDataSetChanged();
                 break;
-            
+
 
         }
         return true;
