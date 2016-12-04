@@ -7,11 +7,15 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Parcel;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
@@ -50,6 +54,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 
 import java.io.ByteArrayOutputStream;
@@ -213,13 +219,22 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         sharedPreferences=PreferenceManager.getDefaultSharedPreferences(this);
         mDiningTransitionHelper=new DiningTransitionHelper(this);
 
-        if(!sharedPreferences.getBoolean(Constants.GEOFENCE_TOGGLE_KEY,false)){
+        /*if(!sharedPreferences.getBoolean(Constants.GEOFENCE_TOGGLE_KEY,false)){
            mDiningTransitionHelper.start();
 
 
             sharedPreferences.edit().putBoolean(Constants.GEOFENCE_TOGGLE_KEY,true);
+        }*/
+        mDiningTransitionHelper.start();
+
+
+        if(getIntent().getBooleanExtra(Constants.PREF_CAMERA,false)){
+           startActivityForResult(captureImage,REQUEST_PHOTO);
+
         }
     }
+
+
 
     @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
@@ -233,10 +248,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
             case R.id.item_refresh:;
                 plateCarousel.getAdapter().notifyDataSetChanged();
                 break;
-            case R.id.location_toggle:
-                mDiningTransitionHelper.end();
-                Toast.makeText(this,"Geofences removed",Toast.LENGTH_SHORT).show();
-                break;
+            
 
         }
         return true;
@@ -270,7 +282,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                         Uri downloadUrl = taskSnapshot.getDownloadUrl();
                         Log.d(TAG,"Photo Successfully Uploaded");
-                        final String strDate=new SimpleDateFormat("yyyyMMdd_HHmmss").format(date);
+                        final String strDate=new SimpleDateFormat("MM/dd/yyyy\nHH:mm:ss").format(date);
                         final Plate newPlate=new Plate(downloadUrl.toString(),uuid,strDate);
                         mPlates.add(newPlate);
                        final  SharedPreferences preferences=PreferenceManager.getDefaultSharedPreferences(PlateActivity.this.getApplicationContext());
@@ -278,6 +290,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                         databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(newPlate.getID().toString()).child("URL").setValue(downloadUrl.toString());
                         databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(newPlate.getID().toString()).child("Date")
                                 .setValue(strDate);
+
                         databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(newPlate.getID().toString()).child("concept").addValueEventListener(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -309,16 +322,54 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                                         }
                                     }).setPositiveButton("OK", new DialogInterface.OnClickListener() {
                                         @Override
-                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                        public void onClick(DialogInterface dialogInterface, final int i) {
 
                                             databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03"))
                                                     .child("Images").child(newPlate.getID().toString()).child("concept").setValue(checkedConcepts.toString());
+                                            for (final String concept:checkedConcepts) {
+                                                databaseReference.child(preferences.getString(Constants.LOGIN_KEY, "hems03")).child("Images").child(newPlate.getID().toString())
+                                                        .child(concept).addChildEventListener(new ChildEventListener() {
+                                                    @Override
+                                                    public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                                                        Log.d(TAG,dataSnapshot.getKey());
+                                                        if (dataSnapshot.getValue() != null) {
+                                                            Log.d(TAG, dataSnapshot.getValue().toString());
+                                                            String val=dataSnapshot.getValue().toString();
+
+                                                            newPlate.addFood(new Food(concept,val,val,val));
+                                                            Log.d(TAG, "Food Added");
+                                                        }
+                                                    }
+
+                                                    @Override
+                                                    public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onCancelled(DatabaseError databaseError) {
+
+                                                    }
+                                                });
+                                            }
 
 
                                         }
                                     });
+
                                     builder.create().show();
                                 }else if (dataSnapshot.getValue()!=null&&dataSnapshot.getValue().toString().charAt(0)=='['){
+
                                     StringTokenizer tokenizer= new StringTokenizer(dataSnapshot.getValue().toString(),"[,");
                                     ArrayList<String>strConcepts= new ArrayList<String>();
                                     while(tokenizer.hasMoreTokens()){
@@ -467,7 +518,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for(final DataSnapshot child:dataSnapshot.getChildren()){
                     DataSnapshot URLChild=child.child("URL");
-                    Plate plate=new Plate(URLChild.getValue().toString(), UUID.fromString(child.getKey().toString()),child.child("Date").toString());
+                    Plate plate=new Plate(URLChild.getValue().toString(), UUID.fromString(child.getKey().toString()),child.child("Date").getValue().toString());
                     String strConcs= child.child("concept").getValue().toString();
                     StringTokenizer stringTokenizer=new StringTokenizer(strConcs,",");
                     ArrayList<String>conceptList=new ArrayList<String>();
@@ -475,8 +526,12 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                         conceptList.add(stringTokenizer.nextToken());
                     }
                     plate.setmConcepts(conceptList);
+                    for(final DataSnapshot foodChild:child.child("Foods").getChildren()){
+                        plate.addFood(new Food(foodChild.getKey(),foodChild.getValue().toString(),foodChild.getValue().toString(),foodChild.getValue().toString()));
+                    }
                     mPlates.add(plate);
                 }
+
                 StaggeredGridLayoutManager layoutManager=new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL);
                 PlateAdapter adapter= new PlateAdapter(PlateActivity.this.getApplicationContext());
 
@@ -549,14 +604,50 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         public PlateHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             LayoutInflater layoutInflater =LayoutInflater.from(appContext);
             View view =layoutInflater.inflate(R.layout.plate_view_holder,parent,false);
-            return new PlateHolder(view);
+            final PlateHolder plateHolder=new PlateHolder(view);
+
+            return plateHolder;
 
         }
 
         @Override
-        public void onBindViewHolder(PlateHolder holder, int position) {
-            PlateImageLoader.loadImage(holder,mPlates.get(position).getPlateURL(),mContext);
+        public void onBindViewHolder(final PlateHolder holder, final int position) {
+            Target target = new Target() {
+                @Override
+                public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                    holder.setBitmap(bitmap);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+                    byte[] b = baos.toByteArray();
+                    mPlates.get(position).setPlateBitmap(b);
+                }
+
+                @Override
+                public void onBitmapFailed(Drawable errorDrawable) {
+
+                }
+
+                @Override
+                public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                }
+            };
+            Picasso.with(PlateActivity.this).load(mPlates.get(position).getPlateURL()).into(target);
             holder.setConcepts(mPlates.get(position).getmConcepts().toString().replace("[","").replace("]",""));
+            holder.getPlateView().setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    ActivityOptionsCompat options = ActivityOptionsCompat.
+                            makeSceneTransitionAnimation(PlateActivity.this, (View)holder.getPlateView(),"plate_view");
+
+                    Intent intent=new Intent(PlateActivity.this,PlateDetailsActivity.class);
+                    intent.putExtra(PlateDetailsActivity.KEY_PLATE_IMAGE,mPlates.get(position).getPlateBitmap());
+                    intent.putExtra(PlateDetailsActivity.KEY_PLATE_DATE,mPlates.get(position).getDate());
+                    intent.putExtra(PlateDetailsActivity.KEY_PLATE_CONCEPT,mPlates.get(position).getmConcepts());
+                    intent.putExtra("foods",mPlates.get(position).getFoods());
+                    startActivity(intent, options.toBundle());
+                }
+            });
             //File mPhotoFile=mPlates.getPhotoFile(mPlates.getPlates().get(position));
 
         }
@@ -579,6 +670,10 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         }
         public void setBitmap(Bitmap bitmap){
             mPlateView.setImageBitmap(bitmap);
+        }
+
+        public ImageView getPlateView(){
+            return mPlateView;
         }
 
         public void setConcepts(String concepts){

@@ -70,8 +70,6 @@ public class PlatesContainer {
 
     final ArrayList<Plate> mPlates;
 
-    private static final String CLARIFAI_API_KEY="bwrRS6mMNw1o3ZxBK2Ashk4jmySk4TrNzOrzwY8y";
-    private static final String CLARIFAI_API_SECRET="D9EAKPCY8FxWkwftESoyXzZambequZwDa_XZN0oq";
 
 
     private static final String TAG="PlatesContainer";

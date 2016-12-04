@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
@@ -38,10 +39,13 @@ public class DiningHallTransitionIntentService extends BroadcastReceiver {
             Log.e(TAG, "Something went wrong!");
             return;
         }
+
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_DWELL) {
+            PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean(Constants.PREF_CAMERA,true);
             List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
             Log.i(TAG, triggeringGeofences.toString());
+
 
 
             NotificationCompat.Builder mBuilder =
@@ -51,6 +55,8 @@ public class DiningHallTransitionIntentService extends BroadcastReceiver {
                             .setContentText("Log what you're eating")
                             .setAutoCancel(true);
             Intent resultIntent = new Intent(context, SignInActivity.class);
+            resultIntent.putExtra(Constants.PREF_CAMERA,true);
+            resultIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
             taskStackBuilder.addParentStack(SignInActivity.class);
             taskStackBuilder.addNextIntent(resultIntent);
@@ -59,6 +65,7 @@ public class DiningHallTransitionIntentService extends BroadcastReceiver {
                             0,
                             PendingIntent.FLAG_UPDATE_CURRENT
                     );
+
             mBuilder.setContentIntent(resultPendingIntent);
             NotificationManager mNotificationManager =
                     (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);

@@ -67,7 +67,7 @@ public class DiningTransitionHelper implements GoogleApiClient.OnConnectionFaile
     }
     private GeofencingRequest getGeofencingRequest() {
         GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
-        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL);
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL|GeofencingRequest.INITIAL_TRIGGER_EXIT);
         builder.addGeofences(mGeofences);
         return builder.build();
     }

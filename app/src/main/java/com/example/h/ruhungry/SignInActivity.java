@@ -48,6 +48,8 @@ public class SignInActivity extends FragmentActivity {
     private EditText mPassEditText;
     private MenuItem mProgressIcon;
 
+    private boolean mGoToCamera=false;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,16 +93,18 @@ public class SignInActivity extends FragmentActivity {
                              Log.d("SignInActivity","Making new user");
                             signInRef.child(login).child("PASS").setValue(pass);
                             sharedPreferences.edit().putString(Constants.LOGIN_KEY,login).apply();
-
-                            startActivity(new Intent(SignInActivity.this.getApplicationContext(),PlateActivity.class));
+                            Intent plateIntent=new Intent(SignInActivity.this.getApplicationContext(),PlateActivity.class);
+                            plateIntent.putExtra(Constants.PREF_CAMERA,mGoToCamera);
+                            startActivity(plateIntent);
                         }else if(dataSnapshot.getValue().equals(pass)){
                             Toast toast = Toast.makeText(SignInActivity.this.getApplicationContext(),"Login Successful",Toast.LENGTH_LONG);
                             toast.show();
                             Log.d("SignInActivity","Login successful");
                             sharedPreferences.edit().putString(Constants.LOGIN_KEY,login).apply();
-
                             Intent plateIntent=new Intent(SignInActivity.this.getApplicationContext(),PlateActivity.class);
+                            plateIntent.putExtra(Constants.PREF_CAMERA,mGoToCamera);
                             startActivity(plateIntent);
+
                         }else{
                             Toast toast = Toast.makeText(SignInActivity.this.getApplicationContext(),"Login Unsuccessful. Try Again",Toast.LENGTH_LONG);
                             toast.show();
@@ -121,6 +125,13 @@ public class SignInActivity extends FragmentActivity {
 
 
 
+
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        mGoToCamera=intent.getBooleanExtra(Constants.PREF_CAMERA,false);
 
     }
 

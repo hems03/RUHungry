@@ -12,9 +12,6 @@
             app:showAsAction="always"
             android:id="@+id/item_refresh"
         />
-    <item android:title="location"
-        android:id="@+id/location_toggle"
-        android:icon="@drawable/ic_location"
-        app:showAsAction="always"/>
+
 
 </menu>
