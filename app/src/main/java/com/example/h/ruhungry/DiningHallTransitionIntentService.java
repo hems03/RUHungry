@@ -36,7 +36,7 @@ public class DiningHallTransitionIntentService extends BroadcastReceiver {
         Log.d(TAG, "Geo Intent Fired");
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
         if (geofencingEvent.hasError()) {
-            Log.e(TAG, "Something went wrong!");
+            Log.e(TAG, ""+geofencingEvent.getErrorCode());
             return;
         }
 

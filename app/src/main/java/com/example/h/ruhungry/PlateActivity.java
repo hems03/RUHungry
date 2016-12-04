@@ -94,7 +94,6 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
      * and a change of the status and navigation bar.
      */
     private static final int UI_ANIMATION_DELAY = 300;
-    public static final String EXTRA_TRANSITION_HELPER="DINING_TRANSITION_HELPER";
     private final Handler mHideHandler = new Handler();
     private View mContentView;
     private GestureDetectorCompat mDetector;
@@ -218,13 +217,6 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
 
         sharedPreferences=PreferenceManager.getDefaultSharedPreferences(this);
         mDiningTransitionHelper=new DiningTransitionHelper(this);
-
-        /*if(!sharedPreferences.getBoolean(Constants.GEOFENCE_TOGGLE_KEY,false)){
-           mDiningTransitionHelper.start();
-
-
-            sharedPreferences.edit().putBoolean(Constants.GEOFENCE_TOGGLE_KEY,true);
-        }*/
         mDiningTransitionHelper.start();
 
 
@@ -535,13 +527,9 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                 StaggeredGridLayoutManager layoutManager=new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL);
                 PlateAdapter adapter= new PlateAdapter(PlateActivity.this.getApplicationContext());
 
-                //layoutManager.setPostLayoutListener(new CarouselZoomPostLayoutListener());
+
                 recyclerView.setLayoutManager(layoutManager);
-                //recyclerView.setHasFixedSize(true);
                 recyclerView.setAdapter(adapter);
-                // enable center post scrolling
-               // recyclerView.addOnScrollListener(new CenterScrollListener());
-                // enable center post touching on item and item click listener
 
 
 
@@ -612,6 +600,8 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
 
         @Override
         public void onBindViewHolder(final PlateHolder holder, final int position) {
+
+            //Need to fix
             Target target = new Target() {
                 @Override
                 public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
@@ -648,7 +638,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                     startActivity(intent, options.toBundle());
                 }
             });
-            //File mPhotoFile=mPlates.getPhotoFile(mPlates.getPlates().get(position));
+
 
         }
 

@@ -14,7 +14,6 @@ public class Constants {
     public static final String GEOFENCE_TOGGLE_KEY="geofence_toggle";
     public static final String PREF_CAMERA="preference_camera";
 
-    public static final int GEOFENCE_EXPIRATION_IN_MILLISECONDS=300;
     public static final int GEOFENCE_RADIUS_IN_METERS=150;
     public static final int LOITERING_DELAY=1000*60/2; //NEED TO CHANGE
 
