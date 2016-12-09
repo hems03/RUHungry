@@ -25,6 +25,7 @@ public class PlateDetailsActivity extends AppCompatActivity {
     public static final String KEY_PLATE_IMAGE="plates_images_views";
     public static final String KEY_PLATE_DATE="plate_date";
     public static final String KEY_PLATE_CONCEPT="plate_concept";
+    public static final String KEY_PLATE_FOODS="plate_foods";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

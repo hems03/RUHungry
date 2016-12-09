@@ -254,7 +254,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                 int dim=photo.getWidth();
                 double heightPercent=(double)dim/photo.getHeight();
                 final int newHeight=(int)(heightPercent*photo.getHeight());
-                Bitmap resizedBitmap=Bitmap.createBitmap(photo,0,(int)(.5*photo.getHeight()-newHeight/2),photo.getWidth(),(newHeight));
+                final Bitmap resizedBitmap=Bitmap.createBitmap(photo,0,(int)(.5*photo.getHeight()-newHeight/2),photo.getWidth(),(newHeight));
 
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
@@ -276,8 +276,14 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                         Log.d(TAG,"Photo Successfully Uploaded");
                         final String strDate=new SimpleDateFormat("MM/dd/yyyy\nHH:mm:ss").format(date);
                         final Plate newPlate=new Plate(downloadUrl.toString(),uuid,strDate);
+                        newPlate.setBitmap(resizedBitmap);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        resizedBitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+                        byte[] b = baos.toByteArray();
+                        newPlate.setPlateBitmapBytes(b);
                         mPlates.add(newPlate);
-                       final  SharedPreferences preferences=PreferenceManager.getDefaultSharedPreferences(PlateActivity.this.getApplicationContext());
+
+                        final  SharedPreferences preferences=PreferenceManager.getDefaultSharedPreferences(PlateActivity.this.getApplicationContext());
                         preferences.edit().putString(Constants.LAST_ENTRY_KEY,strDate);
                         databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(newPlate.getID().toString()).child("URL").setValue(downloadUrl.toString());
                         databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").child(newPlate.getID().toString()).child("Date")
@@ -505,12 +511,16 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
 
     public void loadPlateImages(final RecyclerView recyclerView){
         final BooleanObj newItems=new BooleanObj(false);
+        StaggeredGridLayoutManager layoutManager=new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL);
+        PlateAdapter adapter= new PlateAdapter(PlateActivity.this.getApplicationContext());
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setAdapter(adapter);
         databaseReference.child(preferences.getString(Constants.LOGIN_KEY,"hems03")).child("Images").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for(final DataSnapshot child:dataSnapshot.getChildren()){
                     DataSnapshot URLChild=child.child("URL");
-                    Plate plate=new Plate(URLChild.getValue().toString(), UUID.fromString(child.getKey().toString()),child.child("Date").getValue().toString());
+                    final Plate plate=new Plate(URLChild.getValue().toString(), UUID.fromString(child.getKey().toString()),child.child("Date").getValue().toString());
                     String strConcs= child.child("concept").getValue().toString();
                     StringTokenizer stringTokenizer=new StringTokenizer(strConcs,",");
                     ArrayList<String>conceptList=new ArrayList<String>();
@@ -522,14 +532,36 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                         plate.addFood(new Food(foodChild.getKey(),foodChild.getValue().toString(),foodChild.getValue().toString(),foodChild.getValue().toString()));
                     }
                     mPlates.add(plate);
+
+                    Target target = new Target() {
+                        @Override
+                        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+                            byte[] b = baos.toByteArray();
+                            plate.setPlateBitmapBytes(b);
+                            plate.setBitmap(bitmap);
+                            plateCarousel.getAdapter().notifyDataSetChanged();
+                            Log.d(TAG,"Bitmap added");
+                        }
+
+                        @Override
+                        public void onBitmapFailed(Drawable errorDrawable) {
+                            Log.d(TAG,"Failed to load bitmap");
+                        }
+
+                        @Override
+                        public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                        }
+                    };
+                    Picasso.with(PlateActivity.this).load(plate.getPlateURL()).into(target);
                 }
 
-                StaggeredGridLayoutManager layoutManager=new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL);
-                PlateAdapter adapter= new PlateAdapter(PlateActivity.this.getApplicationContext());
 
 
-                recyclerView.setLayoutManager(layoutManager);
-                recyclerView.setAdapter(adapter);
+
+
 
 
 
@@ -602,27 +634,7 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
         public void onBindViewHolder(final PlateHolder holder, final int position) {
 
             //Need to fix
-            Target target = new Target() {
-                @Override
-                public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                    holder.setBitmap(bitmap);
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
-                    byte[] b = baos.toByteArray();
-                    mPlates.get(position).setPlateBitmap(b);
-                }
-
-                @Override
-                public void onBitmapFailed(Drawable errorDrawable) {
-
-                }
-
-                @Override
-                public void onPrepareLoad(Drawable placeHolderDrawable) {
-
-                }
-            };
-            Picasso.with(PlateActivity.this).load(mPlates.get(position).getPlateURL()).into(target);
+            holder.setBitmap(mPlates.get(position).getBitmap());
             holder.setConcepts(mPlates.get(position).getmConcepts().toString().replace("[","").replace("]",""));
             holder.getPlateView().setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -631,10 +643,10 @@ public class PlateActivity extends AppCompatActivity implements GestureDetector.
                             makeSceneTransitionAnimation(PlateActivity.this, (View)holder.getPlateView(),"plate_view");
 
                     Intent intent=new Intent(PlateActivity.this,PlateDetailsActivity.class);
-                    intent.putExtra(PlateDetailsActivity.KEY_PLATE_IMAGE,mPlates.get(position).getPlateBitmap());
+                    intent.putExtra(PlateDetailsActivity.KEY_PLATE_IMAGE,mPlates.get(position).getPlateBitmapBytes());
                     intent.putExtra(PlateDetailsActivity.KEY_PLATE_DATE,mPlates.get(position).getDate());
                     intent.putExtra(PlateDetailsActivity.KEY_PLATE_CONCEPT,mPlates.get(position).getmConcepts());
-                    intent.putExtra("foods",mPlates.get(position).getFoods());
+                    intent.putExtra(PlateDetailsActivity.KEY_PLATE_FOODS ,mPlates.get(position).getFoods());
                     startActivity(intent, options.toBundle());
                 }
             });

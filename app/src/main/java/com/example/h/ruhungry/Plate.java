@@ -19,7 +19,8 @@ public class Plate  {
     private String mDate;
     private ArrayList<String> mConcepts;
     private ArrayList<Food>mFoods;
-    private byte[] mPlateBitmap;
+    private byte[] mPlateBitmapBytes;
+    private Bitmap mBitmap;
 
 
     public Plate(String plateURL, UUID id, String date ){
@@ -64,12 +65,12 @@ public class Plate  {
         this.mConcepts = mConcepts;
     }
 
-    public byte[] getPlateBitmap() {
-        return mPlateBitmap;
+    public byte[] getPlateBitmapBytes() {
+        return mPlateBitmapBytes;
     }
 
-    public void setPlateBitmap(byte[] plateBitmap) {
-        this.mPlateBitmap = plateBitmap;
+    public void setPlateBitmapBytes(byte[] plateBitmap) {
+        this.mPlateBitmapBytes = plateBitmap;
     }
 
     public ArrayList<Food> getFoods() {
@@ -78,5 +79,13 @@ public class Plate  {
 
     public void addFood(Food food) {
         mFoods.add(food);
+    }
+
+    public Bitmap getBitmap() {
+        return mBitmap;
+    }
+
+    public void setBitmap(Bitmap bitmap) {
+        mBitmap = bitmap;
     }
 }
